@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="match_parent"
+            android:layout_height="133dp"
+            android:fontFamily="@font/advent_pro_bold"
+            android:text='This is a quiz about state capitals. You must choose one correct choice and swipe the screen to the left to go to the next question. At the end of the quiz, you will be shown your quiz grade and be taken back to the home screen. To start the quiz, please press the "start quiz" button. to view your past results, please press the "past results" button. Thank you and have fun!' />
+    </LinearLayout>
+</LinearLayout>

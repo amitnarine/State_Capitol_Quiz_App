@@ -1,0 +1,220 @@
+package edu.uga.cs.project4v1;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+
+public class quizData {
+
+
+    public static final String DEBUG_TAG = "JobLeadsData";
+
+    // this is a reference to our database; it is used later to run SQL commands
+    private static SQLiteDatabase db;
+    private SQLiteOpenHelper quizDbHelper;
+    private static final String[] allColumns = {
+            DBhelper.QUESTIONS_QUESTION_ID,
+            DBhelper.QUESTIONS_STATE_NAME,
+            DBhelper.QUESTIONS_CAPITAL,
+            DBhelper.QUESTIONS_ALT_ONE,
+            DBhelper.QUESTIONS_ALT_TWO,
+
+    };
+
+    private static final String[] quiz = {
+
+            DBhelper.QUIZZES_ID,
+            DBhelper.QUIZZES_DATE,
+            DBhelper.QUIZZES_SCORE,
+            DBhelper.QUIZZES_QUESTION_ONE,
+            DBhelper.QUIZZES_QUESTION_TWO,
+            DBhelper.QUIZZES_QUESTION_THREE,
+            DBhelper.QUIZZES_QUESTION_FOUR,
+            DBhelper.QUIZZES_QUESTION_FIVE,
+            DBhelper.QUIZZES_QUESTION_SIX,
+
+
+    };
+
+    public quizData( Context context ) {
+        this.quizDbHelper = DBhelper.getInstance( context );
+    }
+
+    // Open the database
+    public void open() {
+        db = quizDbHelper.getWritableDatabase();
+        Log.d( DEBUG_TAG, "JobLeadsData: db open" );
+    }
+
+    // Close the database
+    public void close() {
+        if( quizDbHelper != null ) {
+            quizDbHelper.close();
+            Log.d(DEBUG_TAG, "JobLeadsData: db closed");
+        }
+    }
+
+    // Retrieve all job leads and return them as a List.
+    // This is how we restore persistent objects stored as rows in the job leads table in the database.
+    // For each retrieved row, we create a new JobLead (Java POJO object) instance and add it to the list.
+    public List<questions> retrieveAllQuestions() {
+        ArrayList<questions> questions = new ArrayList<>();
+        Cursor cursor = null;
+
+        try {
+            // Execute the select query and get the Cursor to iterate over the retrieved rows
+            cursor = db.query( DBhelper.TABLE_QUESTIONS, allColumns,
+                    null, null, null, null, null );
+
+            // collect all questions into a List
+            if( cursor.getCount() > 0 ) {
+                while( cursor.moveToNext() ) {
+                    // get all attribute values of this question
+                    long id = cursor.getLong( cursor.getColumnIndex( DBhelper.QUESTIONS_QUESTION_ID ) );
+                    String state = cursor.getString( cursor.getColumnIndex( DBhelper.QUESTIONS_STATE_NAME ) );
+                    String capital = cursor.getString( cursor.getColumnIndex( DBhelper.QUESTIONS_CAPITAL ) );
+                    String altOne = cursor.getString( cursor.getColumnIndex( DBhelper.QUESTIONS_ALT_ONE ) );
+                    String altTwo = cursor.getString( cursor.getColumnIndex( DBhelper.QUESTIONS_ALT_TWO ) );
+
+                    // create a new question object and set its state to the retrieved values
+                    questions question = new questions( state, capital, altOne, altTwo );
+                    question.setId( id ); // set the id (the primary key) of this object
+                    // add it to the list
+                    questions.add( question );
+                    Log.d( DEBUG_TAG, "Retrieved JobLead: " + question );
+                }
+            }
+            Log.d( DEBUG_TAG, "Number of records from DB: " + cursor.getCount() );
+        }
+        catch( Exception e ){
+            Log.d( DEBUG_TAG, "Exception caught: " + e );
+        }
+        finally{
+            // we should close the cursor
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        // return a list of retrieved questions
+        return questions;
+    }
+
+    // Store a new job lead in the database.
+    public questions storeQuestion( questions question ) {
+
+        // Prepare the values for all of the necessary columns in the table
+        // and set their values to the variables of the JobLead argument.
+        // This is how we are providing persistence to a JobLead (Java object) instance
+        // by storing it as a new row in the database table representing job leads.
+        ContentValues values = new ContentValues();
+
+
+        values.put( DBhelper.QUESTIONS_STATE_NAME, question.getStateName() );
+        values.put( DBhelper.QUESTIONS_CAPITAL, question.getCapital() );
+        values.put( DBhelper.QUESTIONS_ALT_ONE, question.getaltOne() );
+        values.put( DBhelper.QUESTIONS_ALT_TWO, question.getaltTwo() );
+        // Insert the new row into the database table;
+        // The id (primary key) is automatically generated by the database system
+        // and returned as from the insert method call.
+        long id = db.insert( DBhelper.TABLE_QUESTIONS, null, values );
+
+        // store the id (the primary key) in the JobLead instance, as it is now persistent
+        question.setId( id );
+
+        Log.d( DEBUG_TAG, "Stored new job lead with id: " + String.valueOf( question.getId() ) );
+
+        return question;
+    }
+
+
+    public static QuizResult storeQuiz(QuizResult quizResult) {
+
+       Date date = Calendar.getInstance().getTime();
+
+        SimpleDateFormat format = new SimpleDateFormat("dd-MMM-yyyy", Locale.getDefault());
+
+        String fancyDate = format.format(date);
+
+        ContentValues values = new ContentValues();
+
+
+        values.put( DBhelper.QUIZZES_DATE, fancyDate);
+        values.put( DBhelper.QUIZZES_QUESTION_ONE, quizResult.getQ1());
+        values.put( DBhelper.QUIZZES_QUESTION_TWO, quizResult.getQ2());
+        values.put( DBhelper.QUIZZES_QUESTION_THREE, quizResult.getQ3());
+        values.put( DBhelper.QUIZZES_QUESTION_FOUR, quizResult.getQ4());
+        values.put( DBhelper.QUIZZES_QUESTION_FIVE, quizResult.getQ5());
+        values.put( DBhelper.QUIZZES_QUESTION_SIX, quizResult.getQ6());
+        values.put( DBhelper.QUIZZES_SCORE, quizResult.getScore());
+
+        long id = db.insert( DBhelper.TABLE_QUIZZES, null, values );
+
+        quizResult.setId( id );
+
+        Log.d( DEBUG_TAG, "Stored new job lead with id: " + String.valueOf( quizResult.getId() ) );
+
+        return quizResult;
+
+
+
+    }
+
+    public static List<QuizResult> retrieveAllQuizzes() {
+
+        ArrayList<QuizResult> quizentries = new ArrayList<>();
+        Cursor cursor = null;
+
+        try {
+            // Execute the select query and get the Cursor to iterate over the retrieved rows
+            cursor = db.query( DBhelper.TABLE_QUIZZES, quiz,
+                    null, null, null, null, null );
+
+            // collect all questions into a List
+            if( cursor.getCount() > 0 ) {
+                while( cursor.moveToNext() ) {
+                    // get all attribute values of this question
+                    long id = cursor.getLong( cursor.getColumnIndex( DBhelper.QUIZZES_ID ) );
+                    String date = cursor.getString( cursor.getColumnIndex( DBhelper.QUIZZES_DATE ) );
+                    Long score = cursor.getLong( cursor.getColumnIndex( DBhelper.QUIZZES_SCORE ) );
+
+                    // create a new question object and set its state to the retrieved values
+                    QuizResult quizResult = new QuizResult(date,score);
+                    quizResult.setId( id ); // set the id (the primary key) of this object
+                    // add it to the list
+                    quizentries.add( quizResult );
+                    Log.d( DEBUG_TAG, "Retrieved JobLead: " + quizResult );
+                }
+            }
+            Log.d( DEBUG_TAG, "Number of records from DB: " + cursor.getCount() );
+        }
+        catch( Exception e ){
+            Log.d( DEBUG_TAG, "Exception caught: " + e );
+        }
+        finally{
+            // we should close the cursor
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        // return a list of retrieved questions
+        return quizentries;
+    }
+
+
+
+
+
+
+
+
+}
